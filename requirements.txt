@@ -1,0 +1,11 @@
+langchain
+langchain-ollama
+selenium
+selenium-stealth
+webdriver-manager
+python-dotenv
+requests
+tenacity
+pytest
+responses
+feedparser
