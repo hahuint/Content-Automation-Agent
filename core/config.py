@@ -14,6 +14,10 @@ WP_APP_PASSWORD = os.getenv("WP_APP_PASSWORD", "")
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 GROK_API_KEY = os.getenv("GROK_API_KEY", "")
 
+# Social Media API Keys
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+
 # WordPress Auth Header
 if WP_USERNAME and WP_APP_PASSWORD:
     wp_credentials = f"{WP_USERNAME}:{WP_APP_PASSWORD}"

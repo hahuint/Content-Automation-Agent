@@ -46,11 +46,19 @@ def publish_node(state: AutoPilotState):
     result = delegate_to_journalist.invoke({"topic": state["best_topic"], "raw_facts": state["raw_news"]})
     return {"published_url": result}
 
+def broadcast_node(state: AutoPilotState):
+    print("Broadcasting to social channels...")
+    from tools.social import broadcast_to_socials
+    # Pass the topic and the returned URL to the generic broadcaster
+    if "http" in str(state.get("published_url", "")):
+        broadcast_to_socials.invoke({"topic": state["best_topic"], "url": state["published_url"]})
+    return {} # State doesn't need updating here
+
 def log_node(state: AutoPilotState):
     print("Logging activity...")
     from tools.audit import log_activity
     log_activity.invoke({
-        "action": "Automated Content Publish",
+        "action": "Automated Content Publish & Broadcast",
         "status": "Success",
         "topic": state["best_topic"],
         "url": state["published_url"]
@@ -63,11 +71,13 @@ workflow = StateGraph(AutoPilotState)
 workflow.add_node("audit", check_audit_node)
 workflow.add_node("research", research_node)
 workflow.add_node("publish", publish_node)
+workflow.add_node("broadcast", broadcast_node)
 workflow.add_node("log", log_node)
 
 workflow.add_edge("audit", "research")
 workflow.add_edge("research", "publish")
-workflow.add_edge("publish", "log")
+workflow.add_edge("publish", "broadcast")
+workflow.add_edge("broadcast", "log")
 workflow.add_edge("log", END)
 
 workflow.set_entry_point("audit")
