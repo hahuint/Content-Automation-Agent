@@ -18,8 +18,6 @@ For a deep dive into the system design, diagrams, and technical advantages, see 
 
 When the agent is active, it produces high-fidelity, SEO-optimized content autonomously.
 
-### 📰 Sample Published Article
-![Sample Published Article](/Users/macbook/.gemini/antigravity/brain/43a7c0d3-5519-4cd9-a7f2-af1413da954a/published_article_mockup_1777461639037.png)
 
 ### 🖥️ Terminal Output (Orchestration)
 ```text
