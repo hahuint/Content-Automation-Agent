@@ -41,10 +41,39 @@ def research_node(state: AutoPilotState):
     return {"raw_news": news, "best_topic": chosen}
 
 def publish_node(state: AutoPilotState):
-    print("Drafting and publishing article...")
+    print("Drafting content with Journalist...")
     from tools.journalist import delegate_to_journalist
-    result = delegate_to_journalist.invoke({"topic": state["best_topic"], "raw_facts": state["raw_news"]})
-    return {"published_url": result}
+    import json
+    
+    # 1. Compose the content
+    composed_json = delegate_to_journalist.invoke({"topic": state["best_topic"], "raw_facts": state["raw_news"]})
+    
+    try:
+        data = json.loads(composed_json)
+        
+        # 2. Dynamic Publishing (Plug and Play)
+        # We check the .env config inside the tool or here
+        from tools.wordpress import publish_to_wordpress
+        from core.config import WP_URL
+        
+        if WP_URL:
+            print("Publishing to WordPress...")
+            url = publish_to_wordpress.invoke({
+                "title": data["title"],
+                "content": data["content"],
+                "image_search_term": data["image_search_term"],
+                "comma_separated_tags": data["tags"],
+                "seo_meta_description": data["seo_meta_description"]
+            })
+            return {"published_url": url}
+        else:
+            print("No WordPress URL configured. Skipping CMS upload.")
+            return {"published_url": "No CMS configured"}
+            
+    except Exception as e:
+        print(f"❌ Error in publishing node: {e}")
+        return {"published_url": f"Error: {e}"}
+
 
 def broadcast_node(state: AutoPilotState):
     print("Broadcasting to social channels...")

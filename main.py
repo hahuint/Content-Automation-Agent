@@ -1,6 +1,5 @@
 import time
 from core.agent_setup import agent
-from tools.browser import driver
 
 print("Content Automation System Ready\n")
 print("Select an option:")
@@ -39,8 +38,6 @@ def main():
             choice = input("Select Mode (1 or 2): ")
             if choice.lower() in ["exit", "quit", "bye"]:
                 print("Agent: Goodbye! 👋")
-                if driver:
-                    driver.quit()
                 break
             
             if choice == "2":
@@ -53,11 +50,11 @@ def main():
                 
                 # Give the agent a strict persona so it actually uses tools instead of pretending
                 sys_prompt = """
-                You are a content assistant. 
-                CRITICAL RULES:
-                1. You have NO internal knowledge of current events.
-                2. If the user asks for news or asks you to publish, you MUST invoke a tool ('get_global_news', 'get_trending_tech_news', 'delegate_to_journalist').
-                3. DO NOT answer questions about the news from your memory. ALWAYS call the tools.
+                You are a research and publishing specialist.
+                1. You have NO knowledge of news or current events. 
+                2. To answer any query about news, events, or status, you MUST invoke a tool.
+                3. If the user mentions a specific country or topic (e.g. 'Ethiopia'), pass it as the 'category' to the 'get_global_news' tool.
+                4. Do not apologize. Do not refuse. Just use the tools.
                 """
                 chat_history = [("system", sys_prompt)]
                 
@@ -82,8 +79,6 @@ def main():
                 
         except KeyboardInterrupt:
             print("\nAgent: Goodbye! 👋")
-            if driver:
-                driver.quit()
             break
 
 if __name__ == "__main__":

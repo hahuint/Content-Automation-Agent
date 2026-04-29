@@ -1,19 +1,14 @@
-version: '3.8'
-
 services:
   agent:
     build: .
     container_name: content_agent
-    # This lets Docker talk to the Ollama instance running on your host Mac
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
       - OLLAMA_HOST=http://host.docker.internal:11434
     volumes:
-      # Map these critical files so they persist even if Docker restarts
       - ./.env:/app/.env
       - ./agent_audit.db:/app/agent_audit.db
       - ./facebook_cookies.pkl:/app/facebook_cookies.pkl
-    # Keeps the terminal open so you can select Mode 1 or Mode 2
     stdin_open: true 
     tty: true

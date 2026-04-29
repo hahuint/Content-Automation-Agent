@@ -3,6 +3,7 @@ langchain-ollama>=0.2.0
 langgraph>=0.2.0
 python-dotenv>=1.0.0
 requests>=2.30.0
+requests-oauthlib>=2.0.0
 tenacity>=8.0.0
 pytest>=8.0.0
 responses>=0.25.0

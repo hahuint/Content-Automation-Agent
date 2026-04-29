@@ -4,10 +4,9 @@ FROM python:3.11-slim
 ENV RUNNING_IN_DOCKER=true
 ENV PYTHONUNBUFFERED=1
 
-# Install system dependencies (Chromium and Driver for Selenium)
+# Install system dependencies (None currently required for core logic)
 RUN apt-get update && apt-get install -y \
-    chromium \
-    chromium-driver \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

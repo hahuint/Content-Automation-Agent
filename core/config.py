@@ -17,6 +17,10 @@ GROK_API_KEY = os.getenv("GROK_API_KEY", "")
 # Social Media API Keys
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+X_API_KEY = os.getenv("X_API_KEY", "")
+X_API_SECRET = os.getenv("X_API_SECRET", "")
+X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN", "")
+X_ACCESS_SECRET = os.getenv("X_ACCESS_SECRET", "")
 
 # WordPress Auth Header
 if WP_USERNAME and WP_APP_PASSWORD:
