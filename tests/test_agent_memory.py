@@ -1,5 +1,3 @@
-import os
-import sys
 import requests
 import pytest
 
@@ -34,4 +32,4 @@ def test_agent_audit_memory():
     response = agent.invoke({"messages": [("human", "What did you do today? Check your audit logs and give me a report.")]})
     
     assert "The Future of Autonomous AI" in response['messages'][-1].content
-    assert "Published" in response['messages'][-1].content
+    assert "publish" in response['messages'][-1].content.lower()

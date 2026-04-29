@@ -7,7 +7,7 @@ class PexelsService:
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     def get_image_url(query: str) -> str:
         if not PEXELS_API_KEY:
-            return None
+            return ""
             
         url = f"https://api.pexels.com/v1/search?query={query}&per_page=1&orientation=landscape"
         headers = {"Authorization": PEXELS_API_KEY}
@@ -19,4 +19,4 @@ class PexelsService:
             # Get the high quality landscape version of the image
             return data['photos'][0]['src']['landscape']
             
-        return None
+        return ""

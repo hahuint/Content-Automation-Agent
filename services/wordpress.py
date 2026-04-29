@@ -1,24 +1,30 @@
 import requests
+from typing import Dict, Any, Optional
 from tenacity import retry, stop_after_attempt, wait_exponential
 from core.config import WP_URL, WP_HEADERS
 
 class WordPressService:
+    # Use a persistent session to avoid SSL EOF errors
+    _session = requests.Session()
+    if WP_HEADERS:
+        _session.headers.update(WP_HEADERS)
+
     @staticmethod
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
-    def upload_image(image_url: str, filename: str) -> int:
-        img_data = requests.get(image_url, timeout=15).content
+    def upload_media(img_url: str):
+        img_data = requests.get(img_url, timeout=20).content
         headers = {
-            'Authorization': WP_HEADERS.get('Authorization', ''),
-            'Content-Disposition': f'attachment; filename="{filename}.jpg"',
+            'Content-Disposition': 'attachment; filename="featured_image.jpg"',
             'Content-Type': 'image/jpeg'
         }
-        response = requests.post(f"{WP_URL}/media", headers=headers, data=img_data)
+        response = WordPressService._session.post(f"{WP_URL}/media", headers=headers, data=img_data, timeout=30)
         response.raise_for_status()
         return response.json()['id']
 
     @staticmethod
-    def create_post(title: str, content: str, media_id: int = None, excerpt: str = None, status: str = "publish"):
-        post_data = {
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    def create_post(title: str, content: str, media_id: Optional[int] = None, excerpt: str = "", status: str = "publish"):
+        post_data: Dict[str, Any] = {
             "title": title,
             "content": content,
             "status": status,
@@ -29,5 +35,6 @@ class WordPressService:
         if excerpt:
             post_data["excerpt"] = excerpt
             
-        response = requests.post(f"{WP_URL}/posts", headers=WP_HEADERS, json=post_data)
+        response = WordPressService._session.post(f"{WP_URL}/posts", json=post_data, timeout=30)
+        response.raise_for_status()
         return response

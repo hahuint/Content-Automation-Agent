@@ -22,12 +22,17 @@ class RSSNewsService:
             {"name": "Reuters", "url": "https://news.google.com/rss/search?q=when:24h+allinurl:reuters.com"},
             {"name": "Al Jazeera Global", "url": "https://www.aljazeera.com/xml/rss/all.xml"},
             {"name": "CNN", "url": "http://rss.cnn.com/rss/edition.rss"}
+        ],
+        "trending": [
+            {"name": "Google News Breaking", "url": "https://news.google.com/rss/search?q=when:4h+breaking+news"},
+            {"name": "Google News World", "url": "https://news.google.com/rss/search?q=when:4h+world+news"},
+            {"name": "Reuters Latest", "url": "https://news.google.com/rss/search?q=when:4h+site:reuters.com"}
         ]
     }
 
     @staticmethod
     @retry(stop=stop_after_attempt(2), wait=wait_exponential(multiplier=1, min=2, max=5))
-    def fetch_feed(url: str, limit: int = 2):
+    def fetch_feed(url: str, limit: int = 5):
         """Fetches and parses an RSS XML feed"""
         parsed = feedparser.parse(url)
         results = []
@@ -49,7 +54,7 @@ class RSSNewsService:
         
         for feed in feeds:
             try:
-                entries = RSSNewsService.fetch_feed(feed["url"], limit=2)
+                entries = RSSNewsService.fetch_feed(feed["url"], limit=5)
                 for entry in entries:
                     all_news.append(f"[{feed['name']}] {entry['title']}\nLink: {entry['link']}")
             except Exception as e:

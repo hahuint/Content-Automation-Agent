@@ -1,38 +1,35 @@
 # Content Automation Agent
 
-An enterprise-grade, deterministic content pipeline designed to research, draft, publish, and distribute articles across multiple platforms. Powered by LangGraph for state-machine orchestration, local LLMs for curation, and external APIs for content synthesis.
+A modular content pipeline designed to research, draft, publish, and distribute articles across multiple platforms. Powered by LangGraph for deterministic state-machine orchestration and local LLMs for curation.
 
-For a deep dive into the system design, diagrams, and technical advantages, see the [System Architecture](docs/architecture.md).
+For a technical deep dive, see the [System Architecture Guide](docs/architecture.md).
 
 ## ✨ Features
 
-- **Deterministic Orchestration**: Reliable LangGraph state machine loop.
-- **Decoupled Synthesis**: Local orchestration with cloud-scale content generation.
-- **Omnichannel Support**: Automatic distribution to WordPress, Telegram, and X.
-- **Audit System**: Built-in duplicate prevention and execution logging.
-- **Enterprise Ready**: Full Docker support and professional CI/CD pipeline.
+- **State-Machine Orchestration**: Reliable LangGraph loop for consistent execution.
+- **Multi-LLM Resilience**: Primary synthesis via Grok 4.1 with automated failover to Gemini 2.5 Flash.
+- **Omnichannel Support**: Integration for WordPress, Telegram, and X (Twitter).
+- **Audit System**: SQLite-based duplicate prevention and activity logging.
+- **CI/CD Ready**: Professional GitHub Actions and Docker configuration.
 
 ---
 
 ## 🚀 Results Showcase
 
-When the agent is active, it produces high-fidelity, SEO-optimized content autonomously.
+### 🏁 System Entry Point
+![Starting Point](docs/images/starting_point.png)
 
 ### 🤖 Manual Mode (Direct Research)
 ![Manual Mode Showcase](docs/images/manual_mode.png)
 
-### 🖥️ Terminal Output (Orchestration)
-```text
-[14:30:05] Starting new content cycle...
-🔍 [Audit] Checking recent history... No duplicates found.
-📡 [Research] Fetching trending tech news...
-🧠 [Orchestrator] Evaluating headlines...
-✅ [Selection] Optimal topic: "The Rise of Autonomous AI Agents"
-✍️ [Journalist] Composing SEO-optimized HTML article...
-🚀 [Publish] Article injected into WordPress CMS.
-📢 [Broadcast] Sent update to Telegram and X (Twitter).
-[14:31:12] Cycle complete.
-```
+### 🌐 Live WordPress Result
+![WordPress Result Showcase](docs/images/wordpress_result.png)
+
+### 📢 Telegram Broadcast (Real-time)
+![Telegram Broadcast Showcase](docs/images/telegram_broadcast.png)
+
+### 🖥️ Terminal Output (Automated Orchestration)
+![Automated Loop Terminal Showcase](docs/images/automated_loop_terminal.png)
 
 ---
 

@@ -7,9 +7,10 @@ else
     PIP := pip3
 endif
 
-.PHONY: setup run test lint clean docker-build docker-run
+.PHONY: setup run test lint clean docker-build docker-run docker-test
 
 setup:
+	$(PYTHON) -m pip install --upgrade pip
 	$(PIP) install -e ".[dev]"
 
 run:
@@ -31,3 +32,6 @@ docker-build:
 
 docker-run:
 	docker compose run --rm agent
+
+docker-test:
+	docker compose run --rm agent python3 -m pytest tests/

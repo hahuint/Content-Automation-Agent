@@ -11,6 +11,14 @@ def log_activity(topic: str, action: str, status: str, url: str = "") -> str:
     return AuditService.log_action(topic, action, status, url)
 
 @tool
+def read_recent_topics() -> list:
+    """
+    Get a simple list of recently used topics.
+    Use this to strictly avoid duplicating content.
+    """
+    return AuditService.get_recent_topics(30)
+
+@tool
 def read_recent_audit() -> str:
     """
     Read the recent audit logs to see what you did today or recently.

@@ -51,10 +51,13 @@ def main():
                 # Give the agent a strict persona so it actually uses tools instead of pretending
                 sys_prompt = """
                 You are a research and publishing specialist.
-                1. You have NO knowledge of news or current events. 
-                2. To answer any query about news, events, or status, you MUST invoke a tool.
-                3. If the user mentions a specific country or topic (e.g. 'Ethiopia'), pass it as the 'category' to the 'get_global_news' tool.
-                4. Do not apologize. Do not refuse. Just use the tools.
+                
+                CRITICAL PROTOCOL:
+                1. Before drafting or publishing any topic, you MUST call 'read_recent_topics' to check if we have already covered it.
+                2. If a topic has been covered recently, INFORM the user and ask for a different topic, or suggest an alternative from the news.
+                3. To answer any query about news, use the 'get_global_news' tool.
+                4. Always use 'log_activity' after a successful publication.
+                5. Do not hallucinate history; use 'read_recent_audit' if the user asks what you did.
                 """
                 chat_history = [("system", sys_prompt)]
                 

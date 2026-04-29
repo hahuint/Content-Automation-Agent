@@ -1,6 +1,5 @@
-import pytest
-import responses
 from services.rss_reader import RSSNewsService
+from unittest.mock import patch
 
 # Sample RSS XML to mock the response
 MOCK_RSS_XML = """<?xml version="1.0" encoding="UTF-8" ?>
@@ -19,15 +18,17 @@ MOCK_RSS_XML = """<?xml version="1.0" encoding="UTF-8" ?>
 </rss>
 """
 
-from unittest.mock import patch
+
 
 @patch('services.rss_reader.feedparser.parse')
 def test_fetch_feed(mock_parse):
     # Setup mock return value
     class MockEntry:
         def get(self, key, default=""):
-            if key == "title": return "Test Ethiopian News Headline"
-            if key == "link": return "https://example.com/news1"
+            if key == "title":
+                return "Test Ethiopian News Headline"
+            if key == "link":
+                return "https://example.com/news1"
             return default
 
     class MockParsed:

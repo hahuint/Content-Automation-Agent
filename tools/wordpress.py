@@ -25,7 +25,7 @@ def publish_to_wordpress(title: str, content: str, image_search_term: str = "", 
         if image_url:
             print("☁️ Uploading image to WordPress...")
             try:
-                media_id = WordPressService.upload_image(image_url, image_search_term.replace(" ", "_"))
+                media_id = WordPressService.upload_media(image_url)
             except Exception as e:
                 print(f"⚠️ Could not upload image after 3 retries. Publishing without image. ({e})")
 

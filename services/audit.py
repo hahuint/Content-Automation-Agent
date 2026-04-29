@@ -1,6 +1,4 @@
 import sqlite3
-import os
-from datetime import datetime
 
 DB_PATH = "agent_audit.db"
 
@@ -32,6 +30,16 @@ class AuditService:
         conn.commit()
         conn.close()
         return "Action logged successfully."
+
+    @staticmethod
+    def get_recent_topics(limit: int = 20):
+        """Returns a simple list of topics to help orchestrator avoid duplicates."""
+        conn = AuditService._get_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT DISTINCT topic FROM audit_logs ORDER BY timestamp DESC LIMIT ?', (limit,))
+        topics = [row[0] for row in cursor.fetchall()]
+        conn.close()
+        return topics
 
     @staticmethod
     def get_recent_logs(limit: int = 10):

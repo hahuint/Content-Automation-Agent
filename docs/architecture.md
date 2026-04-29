@@ -18,7 +18,7 @@ graph LR
     
     subgraph "External Ecosystem"
         News["<b>News Sources</b><br/>RSS / HackerNews"]:::external
-        AI["<b>AI Services</b><br/>Grok / Ollama"]:::external
+        AI["<b>AI Services</b><br/>Grok 4.1 / Gemini 2.5 Flash"]:::external
         Publishing["<b>Publication Platforms</b><br/>WordPress / Telegram / X"]:::external
     end
 
@@ -56,77 +56,50 @@ graph TD
     DIST -->|Success URL| DB
 ```
 
-
 ### Data Inputs & Outputs
 | Entity | Type | Description |
 | :--- | :--- | :--- |
-| **Inputs** | Raw Headlines | Fetched from global RSS feeds and HackerNews. |
+| **Inputs** | Raw Headlines | Fetched from global RSS feeds (Trending vs Global). |
 | **Input** | Configuration | API Keys and Preferences loaded via `.env`. |
-| **Output** | HTML Post | A fully formatted SEO article published to WordPress. |
+| **Output** | HTML Post | A fully formatted SEO article published to WordPress Website. |
 | **Output** | Broadcast | Real-time notifications sent to Telegram and X (Twitter) APIs. |
 | **Output** | Audit Log | A record of the transaction stored in `agent_audit.db`. |
 
 ---
 
-## 3. Directory Structure
+## 3. Technical Core Advantages
 
-- **`core/`**: Orchestration logic and initialization. Contains LangGraph workflows, LangChain configuration, and environment variables.
-- **`tools/`**: The abstraction layer. These are LangChain `@tool` functions that connect the orchestration engine to physical system actions.
-- **`services/`**: The integration layer. Pure Python classes that interact with external APIs (WordPress, Grok, Pexels, SQLite). These have zero dependency on the orchestration framework, making them completely reusable.
-- **`tests/`**: Pytest suite using mocked HTTP responses to guarantee system integrity without consuming live API quotas.
-- **`Makefile`**: Developer CLI for setup, testing, and deployment across different operating systems.
-- **`pyproject.toml`**: Modern project configuration, metadata, and dependency management.
+### 🛡️ Multi-Layered Duplication Prevention
+The system implements a hardened memory system to ensure no topic is ever repeated, even across container restarts:
+- **Layer 1 (AI Context)**: The orchestrator injects the last 30 published topics directly into the LLM's prompt with strict negative constraints.
+- **Layer 2 (Python Safety Check)**: A secondary code-level check performs string similarity analysis on every chosen topic. If a match is detected, the cycle is terminated before any resources are consumed.
+- **Persistent Volumes**: In Docker environments, the SQLite database is mapped via host volumes, ensuring the agent "remembers" its history even after being stopped or rebuilt.
+
+### 🔄 High-Availability & Resilience
+- **Persistent Sessions**: The WordPress service utilizes `requests.Session` with custom `User-Agent` headers to mitigate SSL EOF errors and WAF blocking.
+- **Automated Retries**: Critical paths (CMS uploads, Media fetching) implement exponential backoff via the `tenacity` library, allowing the agent to silently recover from transient DNS or network resolution failures.
+- **Multi-LLM Strategy**: Primary synthesis via Grok 4.1 Fast with a seamless fallback to Gemini 2.5 Flash ensures the content pipeline never stalls.
 
 ---
 
-## 4. Orchestration Pipeline
+## 4. Directory Structure
 
-The system utilizes a LangGraph StateGraph to deterministically manage the content generation loop, decoupling the strict workflow sequence from the local model's reasoning constraints.
+- **`core/`**: Orchestration logic and initialization. Contains LangGraph workflows and environment configuration.
+- **`tools/`**: The abstraction layer. LangChain `@tool` functions connecting the engine to system actions.
+- **`services/`**: The integration layer. Pure Python classes for API interaction (WP, Grok, Pexels, SQLite).
+- **`tests/`**: Pytest suite using mocked HTTP responses to guarantee system integrity.
 
-```mermaid
-sequenceDiagram
-    participant Graph as LangGraph Engine
-    participant LocalLLM as Local LLM
-    participant RSS as RSS Services
-    participant ExtAPI as External API (Journalist)
-    participant DB as SQLite Audit
-    participant WP as WordPress API
-    participant Social as Social APIs (Telegram)
-
-    Graph->>DB: [Audit Node] Retrieve recent posts
-    Graph->>RSS: [Research Node] Fetch global news feeds
-    RSS-->>Graph: Return raw news batch
-    Graph->>LocalLLM: [Research Node] Evaluate virality & filter duplicates
-    LocalLLM-->>Graph: Return optimal selected topic
-    Graph->>ExtAPI: [Publish Node] Compose draft via 'delegate_to_journalist'
-    Note over ExtAPI: Generates structured HTML & SEO Data
-    ExtAPI-->>Graph: Return draft JSON payload
-    Graph->>WP: [Publish Node] Inject payload into CMS (if configured)
-    WP-->>Graph: Return publication URL
-    Graph->>Social: [Broadcast Node] Post link to social channels
-    Graph->>DB: [Log Node] Save execution record to Audit Log
-```
+---
 
 ## 5. Workflow Modes
 
-The system supports two primary operational modes:
+- **Manual Mode**: Direct terminal interaction for specific research or audit queries.
+- **Automated Content Loop**: A continuous background process executing the full pipeline hourly.
 
-*   **Mode 1: Manual Mode**: Direct interface with the orchestration model via the terminal. This allows users to give specific research instructions or query the audit logs manually.
-*   **Mode 2: Automated Content Loop**: A continuous background process that executes the full StateGraph pipeline at a fixed interval (default: 1 hour). This mode handles the entire lifecycle from news ingestion to social broadcasting without human intervention.
+---
 
-## 6. Architectural Advantages
-1. **Deterministic Execution**: By utilizing a state machine (LangGraph) rather than a dynamic agent loop (ReAct), the pipeline mathematically guarantees the sequence of operations (Audit -> Research -> Publish -> Log). This entirely eliminates infinite loops and hallucinated tool calls.
-2. **Resource Efficiency**: The local, low-parameter model is utilized exclusively for lightweight evaluation tasks (duplicate checking and topic selection). The computationally expensive task of generating structured HTML and SEO data is delegated to a specialized external API, preserving local system resources.
-3. **Data Integrity**: The pipeline passes the generated HTML payload directly from the secondary model to the WordPress API. This prevents the primary local orchestrator from truncating or corrupting the payload due to context window limitations.
-4. **Fault Tolerance & Stability**: By utilizing official APIs (e.g., Telegram, WordPress) rather than browser automation (Selenium), the system avoids the fragility of UI changes. Network interfaces implement exponential backoff and automated retries via the `tenacity` library, ensuring silent recovery from intermittent API failures during unattended background execution.
+## 6. Technical Verification Snapshot
 
-## 7. Technical Verification & Accuracy
-
-The system's ability to fetch and summarize highly current, complex news items has been verified against live global events. Below is a snapshot of the agent's research accuracy as of **April 29, 2026**:
+The system's accuracy is verified against live global events. Snapshot as of **April 29, 2026**:
 
 ![News Verification Table](images/verification.png)
-
-### Key Verification Highlights:
-*   **Temporal Accuracy**: Correctly identified breaking news from the last 24–48 hours (e.g., Mali rebel attacks, Mugabe deportation).
-*   **Geographic Diversity**: Successfully aggregated and summarized news from diverse regions including the Middle East, Africa, and Europe.
-*   **Factual Precision**: Demonstrated the ability to extract specific details like casualty counts (42 people in Chad) and specific wildlife repatriation efforts (mountain bongos in Kenya).

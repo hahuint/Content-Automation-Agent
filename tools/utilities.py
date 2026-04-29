@@ -5,7 +5,7 @@ def calculator(expression: str) -> str:
     """Perform basic math calculations."""
     try:
         return str(eval(expression))
-    except:
+    except Exception:
         return "Calculation error."
 
 @tool

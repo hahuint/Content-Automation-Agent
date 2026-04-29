@@ -1,4 +1,3 @@
-import pytest
 import responses
 from services.hacker_news import HackerNewsService
 

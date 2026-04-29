@@ -1,96 +1,144 @@
-from typing import TypedDict
-from langgraph.graph import StateGraph, END
+import json
+from typing import TypedDict, List
 from langchain_core.messages import HumanMessage
+from langgraph.graph import StateGraph, END
 from core.agent_setup import llm
+from tools.research import get_global_news
+from tools.journalist import delegate_to_journalist
+from tools.social import broadcast_to_socials
+from tools.wordpress import publish_to_wordpress
+from tools.audit import log_activity, read_recent_audit, read_recent_topics
+from core.config import WP_URL
 
-# 1. Define the State
+# 1. Define State
 class AutoPilotState(TypedDict):
     recent_posts: str
+    recent_topics: List[str]
     raw_news: str
     best_topic: str
+    composed_json: str
+    broadcast_status: str
     published_url: str
     status: str
 
-# 2. Define Nodes (The steps)
+# 2. Define Nodes
 def check_audit_node(state: AutoPilotState):
     print("Checking publication history...")
-    from tools.audit import read_recent_audit
-    return {"recent_posts": read_recent_audit.invoke({})}
+    return {
+        "recent_posts": read_recent_audit.invoke({}),
+        "recent_topics": read_recent_topics.invoke({})
+    }
 
 def research_node(state: AutoPilotState):
     print("Fetching latest news feeds...")
-    from tools.research import get_global_news
-    news = get_global_news.invoke({"category": "global"})
+    # Step 1: Try Trending news first
+    news = get_global_news.invoke({"category": "trending"})
     
     print("Selecting topic...")
-    # Using Llama to select the best topic
-    prompt = f"""
-    Review these news headlines:
-    {news}
+    recent = state.get('recent_topics', [])
     
-    Review the recent posts we already made so we don't duplicate:
-    {state.get('recent_posts', 'None')}
+    def select_topic(news_content):
+        prompt = f"""
+        TASK: Select a UNIQUE news topic for a new article.
+        CRITICAL RESTRICTION: You MUST NOT select any topic that has been covered before.
+        RECENTLY PUBLISHED TOPICS (DO NOT REPEAT THESE):
+        {recent}
+        AVAILABLE NEWS HEADLINES:
+        {news_content}
+        INSTRUCTIONS:
+        1. Compare the available headlines against the 'RECENTLY PUBLISHED TOPICS' list.
+        2. If a headline is similar to an existing topic, DISCARD IT.
+        3. Select the most interesting REMAINING topic.
+        4. IF ALL HEADLINES ARE ALREADY IN THE LIST, YOU MUST RETURN THE EXACT STRING 'NONE_AVAILABLE'.
+        Return ONLY the chosen topic or 'NONE_AVAILABLE'. Do not explain your reasoning.
+        """
+        response = llm.invoke([HumanMessage(content=prompt)])
+        return str(response.content).strip().split('\n')[0]
+
+    chosen = select_topic(news)
     
-    Select the single most interesting news topic from the list that we haven't covered yet.
-    Return ONLY a 1-sentence description of the chosen topic. Do not explain your reasoning.
-    """
-    response = llm.invoke([HumanMessage(content=prompt)])
-    chosen = response.content.strip()
-    
+    # Step 2: Fallback to World news if Trending is exhausted
+    if "NONE_AVAILABLE" in chosen.upper() or any(r.lower()[:50] in chosen.lower() or chosen.lower()[:50] in r.lower() for r in recent):
+        print("⚠️ Trending news exhausted. Falling back to 'World' category...")
+        news = get_global_news.invoke({"category": "world"})
+        chosen = select_topic(news)
+
+    # Final duplication check
+    is_duplicate = any(r.lower()[:50] in chosen.lower() or chosen.lower()[:50] in r.lower() for r in recent)
+    if is_duplicate or "NONE_AVAILABLE" in chosen.upper():
+        print(f"🛑 Duplicate Protection: Skipping topic '{chosen}'.")
+        return {"best_topic": "NONE", "raw_news": "NONE"}
+
     print(f"Selected Topic: {chosen}")
     return {"raw_news": news, "best_topic": chosen}
 
-def publish_node(state: AutoPilotState):
-    print("Drafting content with Journalist...")
-    from tools.journalist import delegate_to_journalist
-    import json
-    
-    # 1. Compose the content
+def draft_node(state: AutoPilotState):
+    if state.get("best_topic") == "NONE":
+        return {"composed_json": "Error"}
+        
+    print(f"Drafting content with Journalist for: {state['best_topic']}")
     composed_json = delegate_to_journalist.invoke({"topic": state["best_topic"], "raw_facts": state["raw_news"]})
     
-    try:
-        data = json.loads(composed_json)
-        
-        # 2. Dynamic Publishing (Plug and Play)
-        # We check the .env config inside the tool or here
-        from tools.wordpress import publish_to_wordpress
-        from core.config import WP_URL
-        
-        if WP_URL:
-            print("Publishing to WordPress...")
-            url = publish_to_wordpress.invoke({
-                "title": data["title"],
-                "content": data["content"],
-                "image_search_term": data["image_search_term"],
-                "comma_separated_tags": data["tags"],
-                "seo_meta_description": data["seo_meta_description"]
-            })
-            return {"published_url": url}
-        else:
-            print("No WordPress URL configured. Skipping CMS upload.")
-            return {"published_url": "No CMS configured"}
-            
-    except Exception as e:
-        print(f"❌ Error in publishing node: {e}")
-        return {"published_url": f"Error: {e}"}
+    if not composed_json.strip().startswith("{"):
+        print(f"❌ Journalist failed to return JSON: {composed_json}")
+        return {"composed_json": "Error"}
 
+    return {"composed_json": composed_json}
 
 def broadcast_node(state: AutoPilotState):
+    composed_json = state.get("composed_json", "")
+    if composed_json == "Error":
+        return {"broadcast_status": "Skipped"}
+
     print("Broadcasting to social channels...")
-    from tools.social import broadcast_to_socials
-    # Pass the topic and the returned URL to the generic broadcaster
-    if "http" in str(state.get("published_url", "")):
-        broadcast_to_socials.invoke({"topic": state["best_topic"], "url": state["published_url"]})
-    return {} # State doesn't need updating here
+    # We broadcast even if there is no URL (as a "Direct Update")
+    url = state.get("published_url", "")
+    if not url:
+        url = "Direct Update (No Link)"
+        
+    result_str = broadcast_to_socials.invoke({
+        "topic": state["best_topic"],
+        "url": url
+    })
+    
+    # Explicit prioritized terminal output
+    if "telegram" in result_str.lower() and "success" in result_str.lower():
+        print("📢 Telegram: done")
+    if "x_twitter" in result_str.lower() and "success" in result_str.lower():
+        print("📢 X (Twitter): done")
+    
+    return {"broadcast_status": result_str}
+
+def cms_node(state: AutoPilotState):
+    composed_json = state.get("composed_json", "")
+    if composed_json == "Error" or not WP_URL:
+        return {"published_url": "Skipped"}
+
+    print("Publishing to WordPress...")
+    try:
+        data = json.loads(composed_json)
+        url = publish_to_wordpress.invoke({
+            "title": data["title"],
+            "content": data["content"],
+            "image_search_term": data["image_search_term"],
+            "comma_separated_tags": data["tags"],
+            "seo_meta_description": data["seo_meta_description"]
+        })
+        return {"published_url": url}
+    except Exception as e:
+        print(f"❌ Error in CMS node: {e}")
+        return {"published_url": f"Error: {e}"}
 
 def log_node(state: AutoPilotState):
+    if state.get("best_topic") == "NONE":
+        return {"status": "Complete (Skipped)"}
+        
     print("Logging activity...")
-    from tools.audit import log_activity
     log_activity.invoke({
         "action": "Automated Content Publish & Broadcast",
         "status": "Success",
         "topic": state["best_topic"],
-        "url": state["published_url"]
+        "url": state.get("published_url", "N/A")
     })
     return {"status": "Complete"}
 
@@ -99,14 +147,16 @@ workflow = StateGraph(AutoPilotState)
 
 workflow.add_node("audit", check_audit_node)
 workflow.add_node("research", research_node)
-workflow.add_node("publish", publish_node)
+workflow.add_node("draft", draft_node)
 workflow.add_node("broadcast", broadcast_node)
+workflow.add_node("cms", cms_node)
 workflow.add_node("log", log_node)
 
 workflow.add_edge("audit", "research")
-workflow.add_edge("research", "publish")
-workflow.add_edge("publish", "broadcast")
-workflow.add_edge("broadcast", "log")
+workflow.add_edge("research", "draft")
+workflow.add_edge("draft", "broadcast")
+workflow.add_edge("broadcast", "cms")
+workflow.add_edge("cms", "log")
 workflow.add_edge("log", END)
 
 workflow.set_entry_point("audit")

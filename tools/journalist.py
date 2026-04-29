@@ -1,8 +1,5 @@
 from langchain_core.tools import tool
 from services.journalist import JournalistService
-from tools.wordpress import publish_to_wordpress
-
-import json
 
 @tool
 def delegate_to_journalist(topic: str, raw_facts: str) -> str:
@@ -15,4 +12,3 @@ def delegate_to_journalist(topic: str, raw_facts: str) -> str:
     """
     # Compose the content (Delegates to Grok/High-power model)
     return JournalistService.write_article(topic, raw_facts)
-
