@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "content-automation-agent"
+version = "1.0.0"
+description = "Deterministic, LangGraph-powered content automation agent for multi-platform distribution."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    { name = "Tesfay G Chekole", email = "hopetesfa@hahuscholar.com" }
+]
+dependencies = [
+    "langchain>=0.3.0",
+    "langchain-ollama>=0.2.0",
+    "langgraph>=0.2.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.30.0",
+    "requests-oauthlib>=2.0.0",
+    "tenacity>=8.0.0",
+    "feedparser>=6.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "responses>=0.25.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"

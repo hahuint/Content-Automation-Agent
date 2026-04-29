@@ -56,9 +56,6 @@ graph TD
     DIST -->|Success URL| DB
 ```
 
-### Start & End Points
-*   **Start**: The pipeline is triggered either manually or via a timed loop. It begins by ingesting **Raw News** from external RSS feeds.
-*   **End**: The process terminates after the article is published and successfully broadcasted to social channels, with the final state saved to the **Audit Database**.
 
 ### Data Inputs & Outputs
 | Entity | Type | Description |
@@ -77,6 +74,8 @@ graph TD
 - **`tools/`**: The abstraction layer. These are LangChain `@tool` functions that connect the orchestration engine to physical system actions.
 - **`services/`**: The integration layer. Pure Python classes that interact with external APIs (WordPress, Grok, Pexels, SQLite). These have zero dependency on the orchestration framework, making them completely reusable.
 - **`tests/`**: Pytest suite using mocked HTTP responses to guarantee system integrity without consuming live API quotas.
+- **`Makefile`**: Developer CLI for setup, testing, and deployment across different operating systems.
+- **`pyproject.toml`**: Modern project configuration, metadata, and dependency management.
 
 ---
 
@@ -108,7 +107,14 @@ sequenceDiagram
     Graph->>DB: [Log Node] Save execution record to Audit Log
 ```
 
-## 5. Architectural Advantages
+## 5. Workflow Modes
+
+The system supports two primary operational modes:
+
+*   **Mode 1: Manual Mode**: Direct interface with the orchestration model via the terminal. This allows users to give specific research instructions or query the audit logs manually.
+*   **Mode 2: Automated Content Loop**: A continuous background process that executes the full StateGraph pipeline at a fixed interval (default: 1 hour). This mode handles the entire lifecycle from news ingestion to social broadcasting without human intervention.
+
+## 6. Architectural Advantages
 1. **Deterministic Execution**: By utilizing a state machine (LangGraph) rather than a dynamic agent loop (ReAct), the pipeline mathematically guarantees the sequence of operations (Audit -> Research -> Publish -> Log). This entirely eliminates infinite loops and hallucinated tool calls.
 2. **Resource Efficiency**: The local, low-parameter model is utilized exclusively for lightweight evaluation tasks (duplicate checking and topic selection). The computationally expensive task of generating structured HTML and SEO data is delegated to a specialized external API, preserving local system resources.
 3. **Data Integrity**: The pipeline passes the generated HTML payload directly from the secondary model to the WordPress API. This prevents the primary local orchestrator from truncating or corrupting the payload due to context window limitations.

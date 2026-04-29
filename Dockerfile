@@ -4,16 +4,17 @@ FROM python:3.11-slim
 ENV RUNNING_IN_DOCKER=true
 ENV PYTHONUNBUFFERED=1
 
-# Install system dependencies (None currently required for core logic)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies using the new pyproject.toml
+COPY pyproject.toml .
+RUN pip install --no-cache-dir .
 
 # Copy all application code
 COPY . .
