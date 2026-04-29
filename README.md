@@ -1,20 +1,20 @@
-# 📰 Autonomous AI Newsroom
+# Content-Automation-Agent
 
-A modular, enterprise-grade content pipeline designed to research, draft, edit, and distribute news articles autonomously. Powered by LangGraph for deterministic state-machine orchestration and a **reflective self-correction loop** for high-fidelity reporting.
+A LangGraph-based agentic pipeline for automated news research, drafting, and multi-platform distribution. Features a deterministic state machine with a self-correction loop for content quality control.
 
 > [!CAUTION]
-> **DISCLAIMER**: This tool is designed for autonomous news generation. It is provided for educational and productivity purposes only. The user is solely responsible for all content published. Always review AI-generated content for accuracy and compliance with third-party platform terms of service. Use at your own risk.
+> **DISCLAIMER**: This tool is designed for automated content generation and publication. It is provided for educational and productivity purposes only. The user is solely responsible for all content published. Always review AI-generated content for accuracy and compliance with third-party platform terms of service. Use at your own risk.
 
 ---
 
 ## ✨ Features
 
-- **Self-Correction Loop**: Built-in "Editor" node that critiques and improves drafts autonomously before publication.
-- **Deterministic Orchestration**: Reliable LangGraph loop for consistent, state-aware execution.
-- **Multi-Layered Memory**: Advanced duplicate prevention using AI context + Python fuzzy matching.
-- **News Category Fallback**: Automatically pivots research (e.g., Trending → World) to ensure constant content flow.
-- **Resilient Delivery**: Automated retries and persistent session management for CMS/Social APIs.
-- **Omnichannel Support**: Integration for WordPress, Telegram, and X (Twitter).
+- **Self-Correction Loop**: Uses a reflective node to critique and refine drafts before publication.
+- **LangGraph Orchestration**: Deterministic state machine for reliable pipeline execution.
+- **Multi-Layered Memory**: Duplicate prevention using LLM context and fuzzy string matching.
+- **Research Fallback**: Automated category pivoting (e.g., Trending → World) to maintain content flow.
+- **API Resilience**: Exponential backoff retries and persistent session management for CMS/Social APIs.
+- **Omnichannel Support**: Native integration for WordPress, Telegram, and X (Twitter).
 
 ---
 
@@ -23,7 +23,7 @@ A modular, enterprise-grade content pipeline designed to research, draft, edit, 
 ### 🤖 Manual Mode (Interactive Research)
 ![Manual Mode Showcase](docs/images/manual_mode.png)
 
-### 🖥️ Terminal Output (Autonomous Loop)
+### 🖥️ Terminal Output (Automated Loop)
 ![Automated Loop Terminal Showcase](docs/images/automated_loop_terminal.png)
 
 ### 🌐 Live WordPress Result
@@ -65,7 +65,7 @@ make run
 
 ## 📖 Documentation & Architecture
 
-The system utilizes a reflective state machine to ensure content quality and distribution reliability.
+The system utilizes a state machine to ensure content quality and distribution reliability.
 
 ```mermaid
 graph TD

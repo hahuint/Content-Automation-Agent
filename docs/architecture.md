@@ -1,6 +1,6 @@
-# System Architecture: Autonomous AI Newsroom
+# System Architecture: Content-Automation-Agent
 
-The Autonomous AI Newsroom is designed using a **deterministic, reflective architecture**, ensuring that every published article undergoes a rigorous automated editorial process.
+The Content-Automation-Agent is designed using a **deterministic, reflective architecture**, ensuring that every published article undergoes a rigorous automated editorial process.
 
 ## 1. System Context Diagram (Level 1)
 

@@ -1,4 +1,4 @@
-# Contributing to Autonomous AI Newsroom
+# Contributing to Content-Automation-Agent
 
 First off, thank you for considering contributing! It's people like you who make this a great tool for the community.
 
