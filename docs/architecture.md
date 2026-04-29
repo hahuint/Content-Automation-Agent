@@ -1,10 +1,10 @@
-# System Architecture
+# System Architecture: Autonomous AI Newsroom
 
-The Content Automation Agent is designed using a **decoupled, modular architecture**, ensuring maximum stability, testability, and upgradeability.
+The Autonomous AI Newsroom is designed using a **deterministic, reflective architecture**, ensuring that every published article undergoes a rigorous automated editorial process.
 
 ## 1. System Context Diagram (Level 1)
 
-This high-level diagram shows the Content Automation Agent as a central system and its relationships with external users and third-party ecosystems.
+This high-level diagram shows the Newsroom as a central system and its relationships with external users and third-party ecosystems.
 
 ```mermaid
 graph LR
@@ -14,54 +14,56 @@ graph LR
     classDef external fill:#64748b,stroke:#334155,color:#fff,stroke-width:2px;
 
     User(("<b>User / Admin</b>")):::user
-    Agent["<b>Content Automation Agent</b><br/>(Deterministic Orchestrator)"]:::system
+    Agent["<b>AI Newsroom</b><br/>(Reflective Orchestrator)"]:::system
     
     subgraph "External Ecosystem"
-        News["<b>News Sources</b><br/>RSS / HackerNews"]:::external
-        AI["<b>AI Services</b><br/>Grok 4.1 / Gemini 2.5 Flash"]:::external
-        Publishing["<b>Publication Platforms</b><br/>WordPress / Telegram / X"]:::external
+        News["<b>Global Feeds</b><br/>RSS / HackerNews"]:::external
+        AI["<b>Editorial AI</b><br/>Grok 4.1 / Gemini 2.5"]:::external
+        Publishing["<b>Distribution</b><br/>WordPress / Telegram / X"]:::external
     end
 
     User -->|Triggers & Configures| Agent
     Agent -->|1. Fetches News| News
-    Agent -->|2. Synthesizes Content| AI
+    Agent -->|2. Refines Content| AI
     Agent -->|3. Distributes Articles| Publishing
     Publishing -->|Delivers Content| User
 ```
 
-## 2. Container Diagram (Level 2)
+## 2. Container Diagram (Level 2) - The Reflective Loop
 
-This diagram illustrates the logical containers within the system and how data flows through the deterministic pipeline.
+This diagram illustrates the logical containers within the system and how the **Self-Correction Loop** ensures high-fidelity output.
 
 ```mermaid
 graph TD
-    subgraph "Content Automation System (Docker Container)"
+    subgraph "Autonomous Newsroom System (Docker)"
         ORCH["<b>Orchestrator</b><br/>(LangGraph Engine)"]
-        DB[("<b>Audit Store</b><br/>SQLite DB")]
+        DB[("<b>Audit & Memory</b><br/>SQLite DB")]
         
-        subgraph "Functional Modules"
-            RESEARCH["<b>Research Module</b><br/>(RSS / HackerNews)"]
-            WRITER["<b>Content Creator</b><br/>(AI Journalist)"]
+        subgraph "Reflective Pipeline"
+            RESEARCH["<b>Research</b><br/>(Trending / World Fallback)"]
+            WRITER["<b>Journalist</b><br/>(Content Creation)"]
+            EDITOR["<b>Editor</b><br/>(Self-Correction Loop)"]
             DIST["<b>Distributor</b><br/>(WP / Social APIs)"]
         end
     end
 
     %% Flow
-    ORCH <-->|Audit Check| DB
-    ORCH -->|1. Trigger Research| RESEARCH
-    RESEARCH -->|Raw Headlines| ORCH
-    ORCH -->|2. Delegate Drafting| WRITER
-    WRITER -->|Draft JSON| ORCH
-    ORCH -->|3. Publish & Broadcast| DIST
-    DIST -->|Success URL| DB
+    ORCH <-->|Memory Check| DB
+    ORCH -->|1. Research| RESEARCH
+    RESEARCH -->|Facts| ORCH
+    ORCH -->|2. Draft| WRITER
+    WRITER -->|Draft| EDITOR
+    EDITOR -->|Feedback| WRITER
+    EDITOR -->|Approval| DIST
+    DIST -->|Success| DB
 ```
 
 ### Data Inputs & Outputs
 | Entity | Type | Description |
 | :--- | :--- | :--- |
-| **Inputs** | Raw Headlines | Fetched from global RSS feeds (Trending vs Global). |
-| **Input** | Configuration | API Keys and Preferences loaded via `.env`. |
-| **Output** | HTML Post | A fully formatted SEO article published to WordPress Website. |
+| **Inputs** | Raw Headlines | Fetched from global feeds (Trending first, then World fallback). |
+| **Input** | Editorial Context | LLM-driven feedback during the self-correction loop. |
+| **Output** | HTML Post | A fully formatted, edited SEO article published to WordPress. |
 | **Output** | Broadcast | Real-time notifications sent to Telegram and X (Twitter) APIs. |
 | **Output** | Audit Log | A record of the transaction stored in `agent_audit.db`. |
 
@@ -69,37 +71,29 @@ graph TD
 
 ## 3. Technical Core Advantages
 
+### 🧠 The Self-Correction Node
+Unlike linear automation scripts, this system features a **reflective feedback loop**. The Editor node evaluates the Journalist's draft against quality, SEO, and engagement metrics. If the draft is insufficient, it is sent back for revision with specific improvement instructions. This ensures that only "8/10" or better content is ever published.
+
 ### 🛡️ Multi-Layered Duplication Prevention
-The system implements a hardened memory system to ensure no topic is ever repeated, even across container restarts:
-- **Layer 1 (AI Context)**: The orchestrator injects the last 30 published topics directly into the LLM's prompt with strict negative constraints.
-- **Layer 2 (Python Safety Check)**: A secondary code-level check performs string similarity analysis on every chosen topic. If a match is detected, the cycle is terminated before any resources are consumed.
-- **Persistent Volumes**: In Docker environments, the SQLite database is mapped via host volumes, ensuring the agent "remembers" its history even after being stopped or rebuilt.
+- **Layer 1 (AI Context)**: The orchestrator injects the last 30 published topics into the Research prompt.
+- **Layer 2 (Python Safety Check)**: A secondary code-level check performs string similarity analysis on every chosen topic.
+- **Persistent Volumes**: Host-mapped SQLite database ensures memory persists across container restarts.
 
-### 🔄 High-Availability & Resilience
-- **Persistent Sessions**: The WordPress service utilizes `requests.Session` with custom `User-Agent` headers to mitigate SSL EOF errors and WAF blocking.
-- **Automated Retries**: Critical paths (CMS uploads, Media fetching) implement exponential backoff via the `tenacity` library, allowing the agent to silently recover from transient DNS or network resolution failures.
-- **Multi-LLM Strategy**: Primary synthesis via Grok 4.1 Fast with a seamless fallback to Gemini 2.5 Flash ensures the content pipeline never stalls.
-
----
-
-## 4. Directory Structure
-
-- **`core/`**: Orchestration logic and initialization. Contains LangGraph workflows and environment configuration.
-- **`tools/`**: The abstraction layer. LangChain `@tool` functions connecting the engine to system actions.
-- **`services/`**: The integration layer. Pure Python classes for API interaction (WP, Grok, Pexels, SQLite).
-- **`tests/`**: Pytest suite using mocked HTTP responses to guarantee system integrity.
+### 🔄 Resilient Newsroom Infrastructure
+- **Category Fallback**: If no unique "Trending" news is found, the system automatically pivots to "World" categories to maintain content flow.
+- **Automated Retries**: Critical paths (CMS uploads, Social APIs) implement exponential backoff via the `tenacity` library.
+- **Session Stability**: Uses `requests.Session` with custom user-agents to prevent SSL/WAF interruptions.
 
 ---
 
-## 5. Workflow Modes
-
-- **Manual Mode**: Direct terminal interaction for specific research or audit queries.
-- **Automated Content Loop**: A continuous background process executing the full pipeline hourly.
+## 4. Workflow Modes
+- **Manual Mode**: Direct interaction for niche research or history auditing.
+- **Automated News Loop**: A continuous background process executing the reflective pipeline hourly.
 
 ---
 
-## 6. Technical Verification Snapshot
-
-The system's accuracy is verified against live global events. Snapshot as of **April 29, 2026**:
-
-![News Verification Table](images/verification.png)
+## 5. Directory Structure
+- **`core/`**: Orchestration logic (LangGraph) and Newsroom configuration.
+- **`tools/`**: The abstraction layer for system actions (WP, Social, Research).
+- **`services/`**: The integration layer for pure API interaction (Requests, GenAI).
+- **`tests/`**: Pytest suite for memory, ingestion, and orchestration verification.

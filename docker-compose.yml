@@ -9,6 +9,5 @@ services:
     volumes:
       - ./.env:/app/.env
       - ./agent_audit.db:/app/agent_audit.db
-      - ./facebook_cookies.pkl:/app/facebook_cookies.pkl
     stdin_open: true 
     tty: true

@@ -8,7 +8,6 @@ from tools.journalist import delegate_to_journalist
 from tools.social import broadcast_to_socials
 from tools.wordpress import publish_to_wordpress
 from tools.audit import log_activity, read_recent_audit, read_recent_topics
-from core.config import WP_URL
 
 # 1. Define State
 class AutoPilotState(TypedDict):
@@ -20,18 +19,22 @@ class AutoPilotState(TypedDict):
     broadcast_status: str
     published_url: str
     status: str
+    # New state for the Self-Correction Loop
+    draft_feedback: str
+    iteration_count: int
 
 # 2. Define Nodes
 def check_audit_node(state: AutoPilotState):
     print("Checking publication history...")
     return {
         "recent_posts": read_recent_audit.invoke({}),
-        "recent_topics": read_recent_topics.invoke({})
+        "recent_topics": read_recent_topics.invoke({}),
+        "iteration_count": 0,
+        "draft_feedback": ""
     }
 
 def research_node(state: AutoPilotState):
     print("Fetching latest news feeds...")
-    # Step 1: Try Trending news first
     news = get_global_news.invoke({"category": "trending"})
     
     print("Selecting topic...")
@@ -57,7 +60,7 @@ def research_node(state: AutoPilotState):
 
     chosen = select_topic(news)
     
-    # Step 2: Fallback to World news if Trending is exhausted
+    # Fallback to World news if Trending is exhausted
     if "NONE_AVAILABLE" in chosen.upper() or any(r.lower()[:50] in chosen.lower() or chosen.lower()[:50] in r.lower() for r in recent):
         print("⚠️ Trending news exhausted. Falling back to 'World' category...")
         news = get_global_news.invoke({"category": "world"})
@@ -76,32 +79,69 @@ def draft_node(state: AutoPilotState):
     if state.get("best_topic") == "NONE":
         return {"composed_json": "Error"}
         
-    print(f"Drafting content with Journalist for: {state['best_topic']}")
-    composed_json = delegate_to_journalist.invoke({"topic": state["best_topic"], "raw_facts": state["raw_news"]})
+    iteration = state.get("iteration_count", 0) + 1
+    feedback = state.get("draft_feedback", "")
+    
+    print(f"Drafting content (Attempt {iteration}) for: {state['best_topic']}")
+    
+    context = f"Topic: {state['best_topic']}\nRaw Facts: {state['raw_news']}"
+    if feedback:
+        context += f"\n\nPREVIOUS FEEDBACK FROM EDITOR: {feedback}\nPlease rewrite the article addressing these specific points."
+
+    composed_json = delegate_to_journalist.invoke({"topic": state["best_topic"], "raw_facts": context})
     
     if not composed_json.strip().startswith("{"):
-        print(f"❌ Journalist failed to return JSON: {composed_json}")
         return {"composed_json": "Error"}
 
-    return {"composed_json": composed_json}
+    return {"composed_json": composed_json, "iteration_count": iteration}
+
+def editor_node(state: AutoPilotState):
+    """
+    Self-Correction Node: Evaluates the draft and provides feedback for improvement.
+    """
+    if state.get("best_topic") == "NONE" or state.get("composed_json") == "Error":
+        return {"draft_feedback": "Skip"}
+
+    print("🧐 Editor critiquing draft...")
+    draft = state["composed_json"]
+    
+    prompt = f"""
+    You are the Chief Editor for a premium news bureau. Evaluate the following news draft for:
+    1. Quality & Tone: Is it professional and engaging?
+    2. SEO: Are the tags and meta description effective?
+    3. Formatting: Is the HTML clean and well-structured?
+    
+    DRAFT:
+    {draft}
+    
+    INSTRUCTIONS:
+    - If the draft is excellent (8/10 or higher), return the string 'APPROVED'.
+    - If it needs improvement, return a concise list of 2-3 specific improvements needed.
+    
+    Return ONLY 'APPROVED' or your feedback list.
+    """
+    response = llm.invoke([HumanMessage(content=prompt)])
+    feedback = str(response.content).strip()
+    
+    if "APPROVED" in feedback.upper() or state.get("iteration_count", 0) >= 2:
+        print("✅ Editor: Approved for publication.")
+        return {"draft_feedback": "APPROVED"}
+    
+    print(f"📝 Editor Feedback: {feedback}")
+    return {"draft_feedback": feedback}
 
 def broadcast_node(state: AutoPilotState):
-    composed_json = state.get("composed_json", "")
-    if composed_json == "Error":
+    if state.get("best_topic") == "NONE" or state.get("composed_json") == "Error":
         return {"broadcast_status": "Skipped"}
 
     print("Broadcasting to social channels...")
-    # We broadcast even if there is no URL (as a "Direct Update")
-    url = state.get("published_url", "")
-    if not url:
-        url = "Direct Update (No Link)"
+    url = state.get("published_url", "") or "Direct Update (No Link)"
         
     result_str = broadcast_to_socials.invoke({
         "topic": state["best_topic"],
         "url": url
     })
     
-    # Explicit prioritized terminal output
     if "telegram" in result_str.lower() and "success" in result_str.lower():
         print("📢 Telegram: done")
     if "x_twitter" in result_str.lower() and "success" in result_str.lower():
@@ -110,13 +150,12 @@ def broadcast_node(state: AutoPilotState):
     return {"broadcast_status": result_str}
 
 def cms_node(state: AutoPilotState):
-    composed_json = state.get("composed_json", "")
-    if composed_json == "Error" or not WP_URL:
+    if state.get("best_topic") == "NONE" or state.get("composed_json") == "Error":
         return {"published_url": "Skipped"}
 
     print("Publishing to WordPress...")
     try:
-        data = json.loads(composed_json)
+        data = json.loads(state["composed_json"])
         url = publish_to_wordpress.invoke({
             "title": data["title"],
             "content": data["content"],
@@ -142,19 +181,36 @@ def log_node(state: AutoPilotState):
     })
     return {"status": "Complete"}
 
-# 3. Build the Future-Proof Graph
+# 3. Build the Loop-Aware Graph
 workflow = StateGraph(AutoPilotState)
 
 workflow.add_node("audit", check_audit_node)
 workflow.add_node("research", research_node)
 workflow.add_node("draft", draft_node)
+workflow.add_node("editor", editor_node)
 workflow.add_node("broadcast", broadcast_node)
 workflow.add_node("cms", cms_node)
 workflow.add_node("log", log_node)
 
 workflow.add_edge("audit", "research")
 workflow.add_edge("research", "draft")
-workflow.add_edge("draft", "broadcast")
+workflow.add_edge("draft", "editor")
+
+# The Self-Correction Loop Logic
+def should_continue(state: AutoPilotState):
+    if state.get("draft_feedback") == "APPROVED" or state.get("draft_feedback") == "Skip":
+        return "continue"
+    return "revise"
+
+workflow.add_conditional_edges(
+    "editor",
+    should_continue,
+    {
+        "continue": "broadcast",
+        "revise": "draft"
+    }
+)
+
 workflow.add_edge("broadcast", "cms")
 workflow.add_edge("cms", "log")
 workflow.add_edge("log", END)

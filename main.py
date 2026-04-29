@@ -49,7 +49,7 @@ def main():
                 print("Example: 'Fetch the latest news from Ethiopia'")
                 
                 # Give the agent a strict persona so it actually uses tools instead of pretending
-                sys_prompt = """
+                SYSTEM_PROMPT = """
                 You are a research and publishing specialist.
                 
                 CRITICAL PROTOCOL:
@@ -59,7 +59,7 @@ def main():
                 4. Always use 'log_activity' after a successful publication.
                 5. Do not hallucinate history; use 'read_recent_audit' if the user asks what you did.
                 """
-                chat_history = [("system", sys_prompt)]
+                chat_history = [("system", SYSTEM_PROMPT)]
                 
                 while True:
                     user_input = input("You: ")

@@ -23,6 +23,9 @@ lint:
 	$(PYTHON) -m ruff check .
 	$(PYTHON) -m mypy .
 
+audit:
+	sqlite3 agent_audit.db "SELECT timestamp, topic, status FROM audit_logs ORDER BY timestamp DESC LIMIT 10;"
+
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
