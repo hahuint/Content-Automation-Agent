@@ -18,9 +18,6 @@ For a deep dive into the system design, diagrams, and technical advantages, see 
 
 When the agent is active, it produces high-fidelity, SEO-optimized content autonomously.
 
-### 📰 Sample Published Article
-![Sample Published Article](docs/images/sample_article.png)
-
 ### 🤖 Manual Mode (Direct Research)
 ![Manual Mode Showcase](docs/images/manual_mode.png)
 
