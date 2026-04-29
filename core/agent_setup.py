@@ -12,9 +12,6 @@ from tools.audit import log_activity, read_recent_audit
 
 ollama_url = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
-# Initialize LLM
-llm = ChatOllama(model=MODEL_NAME, temperature=0.7, base_url=ollama_url)
-
 # Load Tools
 tools = [
     publish_to_wordpress,
@@ -28,5 +25,16 @@ tools = [
     read_recent_audit
 ]
 
-# Create Agent
-agent = create_react_agent(llm, tools)
+# Initialize LLM
+llm = ChatOllama(model=MODEL_NAME, temperature=0, base_url=ollama_url)
+
+# Define System Prompt for the Agent
+SYSTEM_PROMPT = """You are the Content Automation Orchestrator. 
+Your primary job is to help users manage their content pipeline.
+Always use your tools when asked to perform an action (e.g., fetching news, checking audit logs, posting to WordPress).
+If a user asks for 'news', use the 'get_global_news' or 'get_trending_tech_news' tools immediately.
+Be concise and professional.
+"""
+
+# Create Agent with System Prompt
+agent = create_react_agent(llm, tools, prompt=SYSTEM_PROMPT)

@@ -119,3 +119,14 @@ The system supports two primary operational modes:
 2. **Resource Efficiency**: The local, low-parameter model is utilized exclusively for lightweight evaluation tasks (duplicate checking and topic selection). The computationally expensive task of generating structured HTML and SEO data is delegated to a specialized external API, preserving local system resources.
 3. **Data Integrity**: The pipeline passes the generated HTML payload directly from the secondary model to the WordPress API. This prevents the primary local orchestrator from truncating or corrupting the payload due to context window limitations.
 4. **Fault Tolerance & Stability**: By utilizing official APIs (e.g., Telegram, WordPress) rather than browser automation (Selenium), the system avoids the fragility of UI changes. Network interfaces implement exponential backoff and automated retries via the `tenacity` library, ensuring silent recovery from intermittent API failures during unattended background execution.
+
+## 7. Technical Verification & Accuracy
+
+The system's ability to fetch and summarize highly current, complex news items has been verified against live global events. Below is a snapshot of the agent's research accuracy as of **April 29, 2026**:
+
+![News Verification Table](images/verification.png)
+
+### Key Verification Highlights:
+*   **Temporal Accuracy**: Correctly identified breaking news from the last 24–48 hours (e.g., Mali rebel attacks, Mugabe deportation).
+*   **Geographic Diversity**: Successfully aggregated and summarized news from diverse regions including the Middle East, Africa, and Europe.
+*   **Factual Precision**: Demonstrated the ability to extract specific details like casualty counts (42 people in Chad) and specific wildlife repatriation efforts (mountain bongos in Kenya).

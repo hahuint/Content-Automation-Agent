@@ -2,7 +2,7 @@
 
 An enterprise-grade, deterministic content pipeline designed to research, draft, publish, and distribute articles across multiple platforms. Powered by LangGraph for state-machine orchestration, local LLMs for curation, and external APIs for content synthesis.
 
-For a deep dive into the system design, diagrams, and technical advantages, see the [System Architecture](architecture.md).
+For a deep dive into the system design, diagrams, and technical advantages, see the [System Architecture](docs/architecture.md).
 
 ## ✨ Features
 
@@ -18,6 +18,11 @@ For a deep dive into the system design, diagrams, and technical advantages, see 
 
 When the agent is active, it produces high-fidelity, SEO-optimized content autonomously.
 
+### 📰 Sample Published Article
+![Sample Published Article](docs/images/sample_article.png)
+
+### 🤖 Manual Mode (Direct Research)
+![Manual Mode Showcase](docs/images/manual_mode.png)
 
 ### 🖥️ Terminal Output (Orchestration)
 ```text
@@ -59,7 +64,7 @@ make run
 
 ## 📖 Documentation & Architecture
 
-For a deep dive into the system design, C4 diagrams, and technical advantages, please refer to the **[System Architecture Guide](architecture.md)**.
+For a deep dive into the system design, C4 diagrams, and technical advantages, please refer to the **[System Architecture Guide](docs/architecture.md)**.
 
 ---
 

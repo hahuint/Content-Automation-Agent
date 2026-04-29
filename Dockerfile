@@ -12,12 +12,11 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Install Python dependencies using the new pyproject.toml
-COPY pyproject.toml .
-RUN pip install --no-cache-dir .
-
-# Copy all application code
+# Copy all application code (needed for pip install .)
 COPY . .
 
+# Install Python dependencies using the new pyproject.toml
+RUN pip install --no-cache-dir .
+
 # Keep the container running interactively
-CMD ["python", "main.py"]
+CMD ["python3", "main.py"]
