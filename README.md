@@ -22,14 +22,14 @@ For a technical deep dive, see the [System Architecture Guide](docs/architecture
 ### 🤖 Manual Mode (Direct Research)
 ![Manual Mode Showcase](docs/images/manual_mode.png)
 
+### 🖥️ Terminal Output (Automated Orchestration)
+![Automated Loop Terminal Showcase](docs/images/automated_loop_terminal.png)
+
 ### 🌐 Live WordPress Result
 ![WordPress Result Showcase](docs/images/wordpress_result.png)
 
 ### 📢 Telegram Broadcast (Real-time)
 ![Telegram Broadcast Showcase](docs/images/telegram_broadcast.png)
-
-### 🖥️ Terminal Output (Automated Orchestration)
-![Automated Loop Terminal Showcase](docs/images/automated_loop_terminal.png)
 
 ---
 
