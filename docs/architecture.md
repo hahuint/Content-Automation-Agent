@@ -1,6 +1,6 @@
 # System Architecture: Content-Automation-Agent
 
-The Content-Automation-Agent is designed using a **deterministic, reflective architecture**, ensuring that every published article undergoes a rigorous automated editorial process.
+The Content-Automation-Agent is built as a **Deterministic State Machine** powered by LangGraph. This architecture ensures that every content cycle follows a strict, verifiable path from news ingestion to multi-platform distribution.
 
 ## 1. System Context Diagram (Level 1)
 
@@ -31,7 +31,7 @@ graph LR
 
 ## 2. Container Diagram (Level 2) - The Reflective Loop
 
-This diagram illustrates the logical containers within the system and how the **Self-Correction Loop** ensures high-fidelity output.
+This diagram illustrates the logical containers within the system and how the **AutoPilotState** transitions between nodes to ensure high-fidelity output.
 
 ```mermaid
 graph TD
@@ -43,7 +43,7 @@ graph TD
             RESEARCH["<b>Research</b><br/>(Trending / World Fallback)"]
             WRITER["<b>Journalist</b><br/>(Content Creation)"]
             EDITOR["<b>Editor</b><br/>(Self-Correction Loop)"]
-            DIST["<b>Distributor</b><br/>(WP / Social APIs)"]
+            PUBLISH["<b>Publish</b><br/>(WP & Social APIs)"]
         end
     end
 
@@ -54,8 +54,8 @@ graph TD
     ORCH -->|2. Draft| WRITER
     WRITER -->|Draft| EDITOR
     EDITOR -->|Feedback| WRITER
-    EDITOR -->|Approval| DIST
-    DIST -->|Success| DB
+    EDITOR -->|Approval| PUBLISH
+    PUBLISH -->|Success| DB
 ```
 
 ### Data Inputs & Outputs

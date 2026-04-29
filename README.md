@@ -74,8 +74,7 @@ graph TD
     Research --> Draft[Draft Node]
     Draft --> Editor{Self-Correction Node}
     Editor -->|Needs Work| Draft
-    Editor -->|Approved| Broadcast[Social Broadcast]
-    Broadcast --> Publish[WordPress]
+    Editor -->|Approved| Publish[Publish Node]
     Publish --> Log[Log Activity]
 ```
 

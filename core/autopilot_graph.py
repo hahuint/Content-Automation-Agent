@@ -130,43 +130,48 @@ def editor_node(state: AutoPilotState):
     print(f"📝 Editor Feedback: {feedback}")
     return {"draft_feedback": feedback}
 
-def broadcast_node(state: AutoPilotState):
+def publish_node(state: AutoPilotState):
+    """
+    Unified Distribution Node: Handles both Social Media Broadcasting and WordPress CMS Publishing.
+    """
     if state.get("best_topic") == "NONE" or state.get("composed_json") == "Error":
-        return {"broadcast_status": "Skipped"}
+        return {"published_url": "Skipped", "broadcast_status": "Skipped"}
 
-    print("Broadcasting to social channels...")
-    url = state.get("published_url", "") or "Direct Update (No Link)"
-        
-    result_str = broadcast_to_socials.invoke({
-        "topic": state["best_topic"],
-        "url": url
-    })
+    print("🚀 Initiating Distribution Phase...")
     
-    if "telegram" in result_str.lower() and "success" in result_str.lower():
-        print("📢 Telegram: done")
-    if "x_twitter" in result_str.lower() and "success" in result_str.lower():
-        print("📢 X (Twitter): done")
-    
-    return {"broadcast_status": result_str}
-
-def cms_node(state: AutoPilotState):
-    if state.get("best_topic") == "NONE" or state.get("composed_json") == "Error":
-        return {"published_url": "Skipped"}
-
-    print("Publishing to WordPress...")
+    # 1. Publish to WordPress
+    print("☁️ Publishing to WordPress CMS...")
+    published_url = "Error"
     try:
         data = json.loads(state["composed_json"])
-        url = publish_to_wordpress.invoke({
+        published_url = publish_to_wordpress.invoke({
             "title": data["title"],
             "content": data["content"],
             "image_search_term": data["image_search_term"],
             "comma_separated_tags": data["tags"],
             "seo_meta_description": data["seo_meta_description"]
         })
-        return {"published_url": url}
     except Exception as e:
-        print(f"❌ Error in CMS node: {e}")
-        return {"published_url": f"Error: {e}"}
+        print(f"❌ WordPress Error: {e}")
+        published_url = f"Error: {e}"
+
+    # 2. Broadcast to Social Channels
+    print("📢 Broadcasting to Social Channels...")
+    broadcast_status = "Error"
+    try:
+        broadcast_status = broadcast_to_socials.invoke({
+            "topic": state["best_topic"],
+            "url": published_url if not published_url.startswith("Error") else "Direct Update"
+        })
+        if "telegram" in broadcast_status.lower() and "success" in broadcast_status.lower():
+            print("📢 Telegram: done")
+        if "x_twitter" in broadcast_status.lower() and "success" in broadcast_status.lower():
+            print("📢 X (Twitter): done")
+    except Exception as e:
+        print(f"❌ Broadcast Error: {e}")
+        broadcast_status = f"Error: {e}"
+
+    return {"published_url": published_url, "broadcast_status": broadcast_status}
 
 def log_node(state: AutoPilotState):
     if state.get("best_topic") == "NONE":
@@ -188,8 +193,7 @@ workflow.add_node("audit", check_audit_node)
 workflow.add_node("research", research_node)
 workflow.add_node("draft", draft_node)
 workflow.add_node("editor", editor_node)
-workflow.add_node("broadcast", broadcast_node)
-workflow.add_node("cms", cms_node)
+workflow.add_node("publish", publish_node)
 workflow.add_node("log", log_node)
 
 workflow.add_edge("audit", "research")
@@ -206,13 +210,12 @@ workflow.add_conditional_edges(
     "editor",
     should_continue,
     {
-        "continue": "broadcast",
+        "continue": "publish",
         "revise": "draft"
     }
 )
 
-workflow.add_edge("broadcast", "cms")
-workflow.add_edge("cms", "log")
+workflow.add_edge("publish", "log")
 workflow.add_edge("log", END)
 
 workflow.set_entry_point("audit")
