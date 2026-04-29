@@ -13,8 +13,8 @@ graph LR
     classDef user fill:#f59e0b,stroke:#b45309,color:#fff,stroke-width:2px;
     classDef external fill:#64748b,stroke:#334155,color:#fff,stroke-width:2px;
 
-    User((<b>User / Admin</b>)):::user
-    Agent[<b>Content Automation Agent</b><br/>(Deterministic Orchestrator)]:::system
+    User(("<b>User / Admin</b>")):::user
+    Agent["<b>Content Automation Agent</b><br/>(Deterministic Orchestrator)"]:::system
     
     subgraph "External Ecosystem"
         News["<b>News Sources</b><br/>RSS / HackerNews"]:::external
@@ -31,41 +31,29 @@ graph LR
 
 ## 2. Container Diagram (Level 2)
 
-This diagram illustrates the boundaries of the Content Automation System, its internal storage, and its interactions with external News, AI, and Publishing services.
+This diagram illustrates the logical containers within the system and how data flows through the deterministic pipeline.
 
 ```mermaid
 graph TD
-    subgraph "External Inputs"
-        RSS["RSS Feeds / HackerNews"]
-    end
-
-    subgraph "Content Automation System (Local/Docker)"
-        ORCH["<b>Orchestration Engine</b><br/>(Python + LangGraph)"]
-        DB[(<b>Audit Database</b><br/>SQLite)]
-    end
-
-    subgraph "AI Inference Layer"
-        OLLAMA["<b>Local LLM</b><br/>(Ollama/Llama 3.2)"]
-        GROK["<b>Cloud LLM</b><br/>(Grok xAI)"]
-    end
-
-    subgraph "External Outputs & Assets"
-        PEXELS["Pexels API<br/>(Images)"]
-        WP["WordPress CMS<br/>(Blog Posts)"]
-        SOCIAL["Social APIs<br/>(Telegram/X)"]
+    subgraph "Content Automation System (Docker Container)"
+        ORCH["<b>Orchestrator</b><br/>(LangGraph Engine)"]
+        DB[("<b>Audit Store</b><br/>SQLite DB")]
+        
+        subgraph "Functional Modules"
+            RESEARCH["<b>Research Module</b><br/>(RSS / HackerNews)"]
+            WRITER["<b>Content Creator</b><br/>(AI Journalist)"]
+            DIST["<b>Distributor</b><br/>(WP / Social APIs)"]
+        end
     end
 
     %% Flow
-    RSS -->|Raw News| ORCH
-    ORCH <-->|Read/Write History| DB
-    ORCH -->|1. Analyze & Curate| OLLAMA
-    OLLAMA -->|Selected Topic| ORCH
-    ORCH -->|2. Draft Article| GROK
-    GROK -->|Draft HTML| ORCH
-    ORCH -->|3. Fetch Media| PEXELS
-    PEXELS -->|Image URL| ORCH
-    ORCH -->|4. Publish| WP
-    ORCH -->|5. Broadcast| SOCIAL
+    ORCH <-->|Audit Check| DB
+    ORCH -->|1. Trigger Research| RESEARCH
+    RESEARCH -->|Raw Headlines| ORCH
+    ORCH -->|2. Delegate Drafting| WRITER
+    WRITER -->|Draft JSON| ORCH
+    ORCH -->|3. Publish & Broadcast| DIST
+    DIST -->|Success URL| DB
 ```
 
 ### Start & End Points
