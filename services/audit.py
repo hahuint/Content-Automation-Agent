@@ -1,6 +1,9 @@
 import sqlite3
+import os
 
-DB_PATH = "agent_audit.db"
+# Create data directory if it doesn't exist
+os.makedirs("data", exist_ok=True)
+DB_PATH = "data/agent_audit.db"
 
 class AuditService:
     @staticmethod

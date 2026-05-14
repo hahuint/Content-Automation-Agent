@@ -18,5 +18,23 @@ COPY . .
 # Install Python dependencies using the new pyproject.toml
 RUN pip install --no-cache-dir .
 
+# Create data directory and initialize database
+RUN mkdir -p data && python3 << 'EOF'
+import sqlite3
+conn = sqlite3.connect('data/agent_audit.db')
+conn.execute('''
+    CREATE TABLE IF NOT EXISTS audit_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        topic TEXT,
+        action TEXT,
+        status TEXT,
+        url TEXT
+    )
+''')
+conn.commit()
+conn.close()
+EOF
+
 # Keep the container running interactively
 CMD ["python3", "main.py"]

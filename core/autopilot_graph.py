@@ -35,17 +35,24 @@ def check_audit_node(state: AutoPilotState):
 
 def research_node(state: AutoPilotState):
     print("Fetching latest news feeds...")
-    news = get_global_news.invoke({"category": "trending"})
-    
-    print("Selecting topic...")
     recent = state.get('recent_topics', [])
     
+    # Try multiple category fallbacks
+    categories = ["trending", "global", "africa"]
+    chosen = None
+    news = None
+    
     def select_topic(news_content):
+        """Select a unique topic from available news."""
+        if not news_content or len(news_content.strip()) < 50:
+            print(f"  [DEBUG] News content too short or empty: {len(news_content) if news_content else 0} chars")
+            return "NONE_AVAILABLE"
+            
         prompt = f"""
         TASK: Select a UNIQUE news topic for a new article.
         CRITICAL RESTRICTION: You MUST NOT select any topic that has been covered before.
         RECENTLY PUBLISHED TOPICS (DO NOT REPEAT THESE):
-        {recent}
+        {recent if recent else 'None yet - all topics are available'}
         AVAILABLE NEWS HEADLINES:
         {news_content}
         INSTRUCTIONS:
@@ -55,25 +62,49 @@ def research_node(state: AutoPilotState):
         4. IF ALL HEADLINES ARE ALREADY IN THE LIST, YOU MUST RETURN THE EXACT STRING 'NONE_AVAILABLE'.
         Return ONLY the chosen topic or 'NONE_AVAILABLE'. Do not explain your reasoning.
         """
-        response = llm.invoke([HumanMessage(content=prompt)])
-        return str(response.content).strip().split('\n')[0]
+        try:
+            response = llm.invoke([HumanMessage(content=prompt)])
+            result = str(response.content).strip().split('\n')[0]
+            print(f"  [DEBUG] LLM returned: {result[:80]}")
+            return result
+        except Exception as e:
+            print(f"  [DEBUG] LLM Error: {e}")
+            return "NONE_AVAILABLE"
 
-    chosen = select_topic(news)
+    # Try categories in order until we get a valid topic
+    for category in categories:
+        print(f"Selecting topic from '{category}' news...")
+        try:
+            news = get_global_news.invoke({"category": category})
+            print(f"  [DEBUG] News length: {len(news) if news else 0} chars")
+            
+            if not news:
+                print(f"  [DEBUG] No news returned for {category}")
+                continue
+                
+            chosen = select_topic(news)
+            print(f"  [DEBUG] Topic selection result: {chosen[:80] if chosen else 'None'}")
+            
+            if chosen and "NONE_AVAILABLE" not in chosen.upper():
+                # Verify not a duplicate
+                is_duplicate = any(
+                    r.lower()[:50] in chosen.lower() or chosen.lower()[:50] in r.lower() 
+                    for r in recent
+                )
+                if not is_duplicate:
+                    print(f"✅ Selected Topic: {chosen}")
+                    return {"raw_news": news, "best_topic": chosen}
+                else:
+                    print(f"  [DEBUG] Topic is duplicate, trying next category")
+            else:
+                print(f"  [DEBUG] LLM returned NONE_AVAILABLE, trying next category")
+        except Exception as e:
+            print(f"  [DEBUG] Error fetching {category} news: {e}")
+            continue
     
-    # Fallback to World news if Trending is exhausted
-    if "NONE_AVAILABLE" in chosen.upper() or any(r.lower()[:50] in chosen.lower() or chosen.lower()[:50] in r.lower() for r in recent):
-        print("⚠️ Trending news exhausted. Falling back to 'World' category...")
-        news = get_global_news.invoke({"category": "world"})
-        chosen = select_topic(news)
-
-    # Final duplication check
-    is_duplicate = any(r.lower()[:50] in chosen.lower() or chosen.lower()[:50] in r.lower() for r in recent)
-    if is_duplicate or "NONE_AVAILABLE" in chosen.upper():
-        print(f"🛑 Duplicate Protection: Skipping topic '{chosen}'.")
-        return {"best_topic": "NONE", "raw_news": "NONE"}
-
-    print(f"Selected Topic: {chosen}")
-    return {"raw_news": news, "best_topic": chosen}
+    # If all categories exhausted, skip this cycle
+    print("⚠️ No new topics available across all categories. Skipping this cycle.")
+    return {"best_topic": "NONE", "raw_news": "NONE"}
 
 def draft_node(state: AutoPilotState):
     if state.get("best_topic") == "NONE":

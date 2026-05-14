@@ -24,7 +24,7 @@ lint:
 	$(PYTHON) -m mypy .
 
 audit:
-	sqlite3 agent_audit.db "SELECT timestamp, topic, status FROM audit_logs ORDER BY timestamp DESC LIMIT 10;"
+	sqlite3 data/agent_audit.db "SELECT timestamp, topic, status FROM audit_logs ORDER BY timestamp DESC LIMIT 10;"
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +

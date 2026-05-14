@@ -8,6 +8,6 @@ services:
       - OLLAMA_HOST=http://host.docker.internal:11434
     volumes:
       - ./.env:/app/.env
-      - ./agent_audit.db:/app/agent_audit.db
+      - ./data:/app/data
     stdin_open: true 
     tty: true
